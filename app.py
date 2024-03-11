@@ -1,15 +1,18 @@
 import asyncio
+import argparse
 import datetime
 import logging
 import os
 import time
 import traceback
+import sys
 
 import edge_tts
 import gradio as gr
 import librosa
 import torch
 from fairseq import checkpoint_utils
+from IPython.display import clear_output, Audio, display, HTML
 
 from config import Config
 from lib.infer_pack.models import (
@@ -20,6 +23,26 @@ from lib.infer_pack.models import (
 )
 from rmvpe import RMVPE
 from vc_infer_pipeline import VC
+
+
+def arg_parse() -> tuple:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model_name", type=str, help="dummy")
+    parser.add_argument("--speed", type=int, default=0)
+    parser.add_argument("--tts_text", type=str, help="dummy")
+    parser.add_argument("--tts_voice", type=str, default="rmvpe", help="dummy")
+    parser.add_argument("--f0_up_key", type=int, default=0)
+    parser.add_argument("--f0_method", type=str, help="dummy")
+    parser.add_argument("--index_rate", type=float, default=0)
+    parser.add_argument("--protect", type=float, default=0)
+
+    args = parser.parse_args()
+    sys.argv = sys.argv[:1]
+
+    return args
+
+
+parsed = arg_parse()
 
 logging.getLogger("fairseq").setLevel(logging.WARNING)
 logging.getLogger("numba").setLevel(logging.WARNING)
@@ -206,6 +229,7 @@ def tts(
             tgt_sr = resample_sr
         info = f"Success. Time: edge-tts: {edge_time}s, npy: {times[0]}s, f0: {times[1]}s, infer: {times[2]}s"
         print(info)
+        display(Audio(audio_opt, rate=44100))
         return (
             info,
             edge_output_filename,
@@ -361,5 +385,13 @@ with app:
             inputs=[tts_text, tts_voice],
         )
 
-
-app.launch(inbrowser=True)
+tts(
+    model_name=parsed.model_name,
+    speed=parsed.speed,
+    tts_text=" ".join(parsed.tts_text.split("!-!")),
+    tts_voice=parsed.tts_voice,
+    f0_up_key=parsed.f0_up_key,
+    f0_method=parsed.f0_method,
+    index_rate=parsed.index_rate,
+    protect=parsed.protect
+)
