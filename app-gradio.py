@@ -205,7 +205,6 @@ def tts(
         if tgt_sr != resample_sr >= 16000:
             tgt_sr = resample_sr
         info = f"Success. Time: edge-tts: {edge_time}s, npy: {times[0]}s, f0: {times[1]}s, infer: {times[2]}s"
-        display(Audio(audio), rate=44100)
         print(info)
 
         return (
